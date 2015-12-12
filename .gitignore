@@ -1,3 +1,9 @@
+Debug/
+LUFA/Drivers/Board
+LUFA/Drivers/Misc
+LUFA/Drivers/Peripheral
+LUFA/Drivers/USB
+
 # Windows image file caches
 Thumbs.db
 ehthumbs.db
