@@ -5,33 +5,9 @@
  * Author : Sahil Patel
  */ 
 
-#include <avr/io.h>
-#include <avr/interrupt.h>
-#include <util/delay.h>
-
 #include "main.h"
 
-#include "Light_apa102/apa102_config.h"
-#include "Light_apa102/light_apa102.h"
 //#include "LUFA/GenericHID.h"
-
-// Port Usages
-// Port B
-// -B0 | Output	| Accelerometer SPI !SS
-// -B1 | Output	| Accelerometer SPI CLK & ISP Header
-// -B2 | Output | Accelerometer SPI MOSI & ISP Header
-// -B3 | Input	| Accelerometer SPI MISO & ISP Header
-// -B5 | Output	| Serial LED Data
-// -B6 | Output	| Serial LED Clock
-// Port C
-// -C6 | Output	| Toggle USB max current flow (Active high - need thermistor installed)
-// -C7 | Output | Activate/Deactivate 5v boost converter
-// Port D
-// -D2 | Input	| GPS UART RX
-// -D3 | Output | GPS UART TX
-// -D4 | Output	| Enable GPS
-// -D6 | Input	| Accelerometer Interrupt #1
-// -D7 | Input	| Accelerometer Interrupt #2
 
 ///** Buffer to hold the previously generated HID report, for comparison purposes inside the HID class driver. */
 //static uint8_t PrevHIDReportBuffer[GENERIC_REPORT_SIZE];
@@ -55,15 +31,21 @@
 				//.PrevReportINBufferSize       = sizeof(PrevHIDReportBuffer),
 			//},
 	//};
-
-
+	
+struct cRGB LEDArray[N_LEDS];	// LED Color Array
 
 ISR(TIMER0_OVF_vect) {
 	// Timer code
 }
 
+ISR(SPI_STC_vect){
+	// SPI Byte Transmitted
+}
+
 int main(void){
-	struct cRGB LEDArray[N_LEDS];	// LED Color Array
+	uint8_t sensor8bPacket = 0x00;
+	int16_t sensor16bPacket = 0x00;
+	uint8_t error = 0;
 	
 	configurePorts();				// Set up I/O ports
 	//setupUSBHardware();
@@ -76,21 +58,215 @@ int main(void){
 	//TCNT0 = 0x00;					// Timer/Counter Register - Set to 0 at start
 	
 	enableLEDs();
+	enableSPI();
+	//sei();
 	
 	_delay_ms(500);		// Allow 500ms to turn on 5v power block
-	LEDArray[0].r=0x00;	LEDArray[0].g=0x00;	LEDArray[0].b=0xFF;	LEDArray[0].fade=0x01;
-	LEDArray[1].r=0xFF;	LEDArray[1].g=0xFF;	LEDArray[1].b=0xFF;	LEDArray[1].fade=0x01;
-	LEDArray[2].r=0xFF;	LEDArray[2].g=0x00;	LEDArray[2].b=0x00;	LEDArray[2].fade=0x01;
-	LEDArray[3].r=0xFF;	LEDArray[3].g=0xFF;	LEDArray[3].b=0xFF;	LEDArray[3].fade=0x01;
-	LEDArray[4].r=0xFF;	LEDArray[4].g=0x00;	LEDArray[4].b=0x00;	LEDArray[4].fade=0x01;
+	LEDArray[0].r=0x50;	LEDArray[0].g=0x50;	LEDArray[0].b=0xFF;	LEDArray[0].fade=0x01;
+	LEDArray[1].r=0x50;	LEDArray[1].g=0x50;	LEDArray[1].b=0xFF;	LEDArray[1].fade=0x01;
+	LEDArray[2].r=0x50;	LEDArray[2].g=0x50;	LEDArray[2].b=0xFF;	LEDArray[2].fade=0x01;
+	LEDArray[3].r=0x50;	LEDArray[3].g=0x50;	LEDArray[3].b=0xFF;	LEDArray[3].fade=0x01;
+	LEDArray[4].r=0x50;	LEDArray[4].g=0x50;	LEDArray[4].b=0xFF;	LEDArray[4].fade=0x01;
 	apa102_setleds(LEDArray,5);
-
-	sei();
 	
    // Main loop
-    while(1){
+    while(1){		
+		readByteLSM(INT_SRC_M, &sensor8bPacket);
+		if(sensor8bPacket){
+			setLEDColor(&LEDArray[1], LED_COLOR_OFF);
+			apa102_setleds(LEDArray,5);
+			_delay_ms(200);
 			
+			printLEDCode(sensor8bPacket);
+			_delay_ms(1000);
+			error = 1;
+		}
+		
+		readByteLSM(WHO_AM_I, &sensor8bPacket);
+		if(sensor8bPacket != 0x49){
+			setLEDColor(&LEDArray[2], LED_COLOR_OFF);
+			apa102_setleds(LEDArray,5);
+			_delay_ms(200);
+			
+			printLEDCode(sensor8bPacket);
+			_delay_ms(1000);
+			error = 1;
+		}
+		
+		if(error == 0){
+			setLEDColor(&LEDArray[1], LED_COLOR_GREEN);
+			apa102_setleds(LEDArray,5);
+			_delay_ms(200);
+			
+			readBytesLSM(OUT_X_L_A, &sensor16bPacket);
+			printLEDCode(sensor16bPacket);
+			_delay_ms(200);
+		}
+		
+		error = 0;
     }
+}
+
+void printLEDTherm16bCode(int16_t therm){
+	uint8_t r, g, b;
+	
+	if(therm < 0) therm = 0 - therm;
+	
+	if(therm > 0x0007){
+		if(therm > 0x000F){
+			if(therm > 0x007F){
+				if(therm > 0x00FF){
+					if(therm > 0x07FF){
+						r=0xFF; g = 0x00; b = 0x00;
+					}
+					else{
+						r=0x00; g = 0xFF; b = 0x00;
+					}
+				}
+				else{
+					r=0x00; g = 0x00; b = 0xFF;
+				}
+			}
+			else{
+				r=0xFF; g = 0xFF; b = 0x00;
+			}
+		}
+		else{
+			r=0xFF; g = 0x00; b = 0xFF;
+		}
+	}
+	else{
+		r=0x00; g = 0xFF; b = 0xFF;
+	}
+	
+	LEDArray[0].r=r;	LEDArray[0].g=g;	LEDArray[0].b=b;	LEDArray[0].fade=0x01;
+	LEDArray[1].r=r;	LEDArray[1].g=g;	LEDArray[1].b=b;	LEDArray[1].fade=0x01;
+	LEDArray[2].r=r;	LEDArray[2].g=g;	LEDArray[2].b=b;	LEDArray[2].fade=0x01;
+	LEDArray[3].r=r;	LEDArray[3].g=g;	LEDArray[3].b=b;	LEDArray[3].fade=0x01;
+	LEDArray[4].r=r;	LEDArray[4].g=g;	LEDArray[4].b=b;	LEDArray[4].fade=0x01;
+	apa102_setleds(LEDArray,5);
+}
+
+void printLEDCode(uint16_t code){
+	setLEDColor(&LEDArray[0], code&0x3);
+	setLEDColor(&LEDArray[1], (code>>3)&0x7);
+	setLEDColor(&LEDArray[2], (code>>6)&0x7);
+	setLEDColor(&LEDArray[3], (code>>9)&0x7);
+	setLEDColor(&LEDArray[4], (code>>12)&0x7);
+	apa102_setleds(LEDArray,5);
+}
+
+void setLEDColor(struct cRGB *LED, uint8_t color){
+	switch (color){
+		case LED_COLOR_WHITE:
+		LED[0].r = 0xFF;
+		LED[0].g = 0xFF;
+		LED[0].b = 0xFF;
+		break;
+		
+		case LED_COLOR_GREEN:
+		LED[0].r = 0x00;
+		LED[0].g = 0xFF;
+		LED[0].b = 0x00;
+		break;
+		
+		case LED_COLOR_BLUE:
+		LED[0].r = 0x00;
+		LED[0].g = 0x00;
+		LED[0].b = 0xFF;
+		break;
+		
+		case LED_COLOR_RED:
+		LED[0].r = 0xFF;
+		LED[0].g = 0x00;
+		LED[0].b = 0x00;
+		break;
+		
+		case LED_COLOR_YELLOW:
+		LED[0].r = 0xFF;
+		LED[0].g = 0xFF;
+		LED[0].b = 0x00;
+		break;
+		
+		case LED_COLOR_BROWN:
+		LED[0].r = 0xA5;
+		LED[0].g = 0x2A;
+		LED[0].b = 0x2A;
+		break;
+		
+		case LED_COLOR_ORANGE:
+		LED[0].r = 0xFF;
+		LED[0].g = 0xA5;
+		LED[0].b = 0x00;
+		break;
+		
+		case LED_COLOR_PINK:
+		LED[0].r = 0xFF;
+		LED[0].g = 0xC0;
+		LED[0].b = 0xCB;
+		break;
+		
+		case LED_COLOR_OFF:
+		LED[0].r = 0x00;
+		LED[0].g = 0x00;
+		LED[0].b = 0x00;
+		//LED[0].fade = 0x00;
+		break;
+	
+	}
+}
+
+void readByteLSM(uint8_t address, uint8_t* data){
+	address |= 0x80;
+	
+	PORT_SPI_SS &= ~(1<<PIN_SPI_SS);
+	_NOP();
+	
+	writeByteToSPI(address);
+	*data = writeByteToSPI(0x00);
+	 
+	PORT_SPI_SS |= PIN_SPI_SS;
+}
+
+// Read two bytes in consecutive addresses
+void readBytesLSM(uint8_t address, int16_t* data){
+	address |= 0x80 | (0x40);
+	
+	PORT_SPI_SS &= ~(1<<PIN_SPI_SS);
+	_NOP();
+	
+	writeByteToSPI(address);
+	*data = writeByteToSPI(0x00);
+	*data |= ((int16_t)writeByteToSPI(0x00))<<8;
+	
+	PORT_SPI_SS |= PIN_SPI_SS;
+}
+
+void writeByteLSM(uint8_t address, uint8_t data){
+	address &= ~(0x80);
+	
+	PORT_SPI_SS &= ~(1<<PIN_SPI_SS);
+	_NOP();
+	
+	writeByteToSPI(address);
+	writeByteToSPI(data);
+	
+	PORT_SPI_SS |= PIN_SPI_SS;
+}
+
+void writeBytesLSM(uint8_t address, uint8_t* data, uint8_t nBytes, uint8_t MS){
+	address &= ~(0x80);
+	address |= (0x40 & MS);
+	
+	PORT_SPI_SS &= ~(1<<PIN_SPI_SS);
+	_NOP();
+	
+	writeByteToSPI(address);
+	for(uint8_t i = 0; i < nBytes; i++){
+		writeByteToSPI(data[i]);
+	}
+	
+	PORT_SPI_SS |= PIN_SPI_SS;
 }
 
 void enableLEDs(){
@@ -102,7 +278,7 @@ void disableLEDs(){
 }
 
 void configurePorts(){
-	// Configure PortC I/O directionality
+	// Configure PortB I/O directionality
 	DDRB |= (1<<DDB0) | (1<<DDB1) | (1<<DDB2) | (1<<DDB5) | (1<<DDB6);
 	DDRB &= ~(1<<DDB3);
 	
