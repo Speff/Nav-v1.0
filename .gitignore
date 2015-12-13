@@ -3,6 +3,8 @@ LUFA/Drivers/Board
 LUFA/Drivers/Misc
 LUFA/Drivers/Peripheral
 LUFA/Drivers/USB
+LUFA/Platform/UC3
+LUFA/Platform/XMEGA
 
 # Windows image file caches
 Thumbs.db

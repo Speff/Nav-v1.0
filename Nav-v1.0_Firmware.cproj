@@ -38,6 +38,19 @@
         </dependencies>
       </framework-data>
     </AsfFrameworkConfig>
+    <avrtool>com.atmel.avrdbg.tool.megadfu</avrtool>
+    <avrtoolserialnumber />
+    <avrdeviceexpectedsignature>0x1E958A</avrdeviceexpectedsignature>
+    <com_atmel_avrdbg_tool_megadfu>
+      <ToolOptions xmlns="">
+        <InterfaceProperties>
+        </InterfaceProperties>
+      </ToolOptions>
+      <ToolType xmlns="">com.atmel.avrdbg.tool.megadfu</ToolType>
+      <ToolNumber xmlns="">
+      </ToolNumber>
+      <ToolName xmlns="">Atmel Mega DFU</ToolName>
+    </com_atmel_avrdbg_tool_megadfu>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <ToolchainSettings>
@@ -86,7 +99,13 @@
   <avrgcc.compiler.symbols.DefSymbols>
     <ListValues>
       <Value>DEBUG</Value>
-      <Value>F_CPU=8000000</Value>
+      <Value>F_CPU=8000000UL</Value>
+      <Value>F_USB=8000000UL</Value>
+      <Value>USE_STATIC_OPTIONS="(USB_DEVICE_OPT_FULLSPEED | USB_OPT_REG_ENABLED | USB_OPT_AUTO_PLL)"</Value>
+      <Value>USB_DEVICE_ONLY</Value>
+      <Value>USE_FLASH_DESCRIPTORS</Value>
+      <Value>FIXED_CONTROL_ENDPOINT_SIZE=8</Value>
+      <Value>FIXED_NUM_CONFIGURATIONS=1</Value>
     </ListValues>
   </avrgcc.compiler.symbols.DefSymbols>
   <avrgcc.compiler.directories.IncludePaths>
@@ -99,26 +118,25 @@
   <avrgcc.compiler.optimization.AllocateBytesNeededForEnum>True</avrgcc.compiler.optimization.AllocateBytesNeededForEnum>
   <avrgcc.compiler.optimization.DebugLevel>Default (-g2)</avrgcc.compiler.optimization.DebugLevel>
   <avrgcc.compiler.warnings.AllWarnings>True</avrgcc.compiler.warnings.AllWarnings>
+  <avrgcc.compiler.miscellaneous.OtherFlags>-std=gnu99 -ffunction-sections</avrgcc.compiler.miscellaneous.OtherFlags>
   <avrgcc.linker.libraries.Libraries>
     <ListValues>
       <Value>libm</Value>
     </ListValues>
   </avrgcc.linker.libraries.Libraries>
+  <avrgcc.linker.miscellaneous.LinkerFlags>-Wl,--gc-sections</avrgcc.linker.miscellaneous.LinkerFlags>
   <avrgcc.assembler.debugging.DebugLevel>Default (-Wa,-g)</avrgcc.assembler.debugging.DebugLevel>
 </AvrGcc>
     </ToolchainSettings>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="apa102_config.h">
+    <Compile Include="Light_apa102\apa102_config.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="Light_apa102\light_apa102.c">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="Light_apa102\light_apa102.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="LUFA\Drivers\USB.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="main.c">
@@ -129,9 +147,8 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="LUFA" />
-    <Folder Include="LUFA\Drivers" />
     <Folder Include="Light_apa102" />
+    <Folder Include="LUFA" />
   </ItemGroup>
   <Import Project="$(AVRSTUDIO_EXE_PATH)\\Vs\\Compiler.targets" />
 </Project>
