@@ -56,7 +56,10 @@ void inline apa102_setleds(struct cRGB *ledarray, uint16_t leds)
 {
   uint16_t i;
   uint8_t *rawarray=(uint8_t*)ledarray;
-  SPI_init();
+  //SPI_init();
+  //apa102_DDRREG  |=  _BV(apa102_data);
+  //apa102_DDRREG  |=  _BV(apa102_clk);
+  apa102_PORTREG &= ~_BV(apa102_clk);  // initial state of clk is low
   
   SPI_write(0x00);  // Start Frame
   SPI_write(0x00);

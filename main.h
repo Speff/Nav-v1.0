@@ -30,13 +30,12 @@
 void configurePorts(void);
 void enableLEDs();
 void disableLEDs();
-void writeByteLSM(uint8_t, uint8_t);
-void writeBytesLSM(uint8_t, uint8_t*, uint8_t, uint8_t);
-void readByteLSM(uint8_t, uint8_t*);
-void readBytesLSM(uint8_t, int16_t*);
+uint8_t spiRxTX(uint8_t, uint8_t, uint8_t);
 void setLEDColor(struct cRGB *, uint8_t);
-void printLEDCode(uint16_t);
-void printLEDTherm16bCode(int16_t);
+void uint8ToRGB(uint8_t);
+void int16ToRGB(int16_t);
+void printLED8bCode(uint8_t);
+void setUpLSM(void);
 
 // Port Usages
 // Port B
@@ -55,6 +54,9 @@ void printLEDTherm16bCode(int16_t);
 // -D4 | Output	| Enable GPS
 // -D6 | Input	| Accelerometer Interrupt #1
 // -D7 | Input	| Accelerometer Interrupt #2
+
+#define SPI_READ			0x80
+#define SPI_WRITE			0x00
 
 #define PORT_SPI_SS			PORTB
 #define PORT_SPI_SCK		PORTB
