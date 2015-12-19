@@ -11,11 +11,17 @@
 #include <avr/interrupt.h>
 #include <util/delay.h>
 #include <avr/cpufunc.h>
+#include <string.h>
+#include <math.h>
+
 #include "LSM303D.h"
 #include "Light_apa102/apa102_config.h"
 #include "Light_apa102/light_apa102.h"
+#include "LUFA-Interface/GenericHID.h"
 
-#define N_LEDS 5
+#define N_LEDS	5
+#define MAG_RES	6.1036e-5
+#define ACL_RES	0.000122072
 
 // from AVR035: Efficient C Coding for AVR
 #define SETBIT(ADDRESS,BIT) (ADDRESS |= (1<<BIT))
@@ -27,15 +33,28 @@
 #define FLIPBITMASK(x,y) (x ^= (y))
 #define CHECKBITMASK(x,y) (x & (y))
 
+struct XYZLimits { int16_t xMin; int16_t xMax; int16_t yMin; int16_t yMax; int16_t zMin; int16_t zMax;};
+struct XYZData { int16_t x; int16_t y; int16_t z;};
+struct IMUReadings { float pitch; float roll; float heading;};
+
 void configurePorts(void);
 void enableLEDs();
 void disableLEDs();
-uint8_t spiRxTX(uint8_t, uint8_t, uint8_t);
 void setLEDColor(struct cRGB *, uint8_t);
-void uint8ToRGB(uint8_t);
-void int16ToRGB(int16_t);
+void int16ToRGB(int16_t, int16_t, int16_t, struct cRGB *);
+void doubleToRGB(double, double, double, struct cRGB *);
+void floatTo360RGB(float, struct cRGB *);
 void printLED8bCode(uint8_t);
-void setUpLSM(void);
+void setUpLSM(struct IMUReadings *);
+void processCompass(struct IMUReadings *);
+
+void fillCompletedString();
+void setUpUART();
+void enableGPS();
+void disableGPS();
+
+uint8_t spiRxTX(uint8_t, uint8_t, uint8_t);
+int16_t spiRxTX16b(uint8_t, uint8_t, int16_t);
 
 // Port Usages
 // Port B
@@ -57,6 +76,7 @@ void setUpLSM(void);
 
 #define SPI_READ			0x80
 #define SPI_WRITE			0x00
+#define SPI_MULTIPLEACCESS	0x40
 
 #define PORT_SPI_SS			PORTB
 #define PORT_SPI_SCK		PORTB
@@ -95,3 +115,4 @@ void setUpLSM(void);
 #define LED_COLOR_ORANGE	6
 #define LED_COLOR_PINK		7
 #define LED_COLOR_OFF		8
+#define LED_COLOR_TURQUOISE 9

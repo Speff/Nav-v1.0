@@ -152,13 +152,13 @@ const USB_Descriptor_String_t PROGMEM LanguageString = USB_STRING_DESCRIPTOR_ARR
  *  form, and is read out upon request by the host when the appropriate string ID is requested, listed in the Device
  *  Descriptor.
  */
-const USB_Descriptor_String_t PROGMEM ManufacturerString = USB_STRING_DESCRIPTOR(L"Dean Camera");
+const USB_Descriptor_String_t PROGMEM ManufacturerString = USB_STRING_DESCRIPTOR(L"Sahil Patel");
 
 /** Product descriptor string. This is a Unicode string containing the product's details in human readable form,
  *  and is read out upon request by the host when the appropriate string ID is requested, listed in the Device
  *  Descriptor.
  */
-const USB_Descriptor_String_t PROGMEM ProductString = USB_STRING_DESCRIPTOR(L"LUFA Generic HID Demo");
+const USB_Descriptor_String_t PROGMEM ProductString = USB_STRING_DESCRIPTOR(L"Nav v1.0");
 
 /** This function is called by the library when in device mode, and must be overridden (see library "USB Descriptors"
  *  documentation) by the application code so that the address and size of a requested descriptor can be given
@@ -167,7 +167,7 @@ const USB_Descriptor_String_t PROGMEM ProductString = USB_STRING_DESCRIPTOR(L"LU
  *  USB host.
  */
 uint16_t CALLBACK_USB_GetDescriptor(const uint16_t wValue,
-                                    const uint16_t wIndex,
+                                    const uint8_t wIndex,
                                     const void** const DescriptorAddress)
 {
 	const uint8_t  DescriptorType   = (wValue >> 8);

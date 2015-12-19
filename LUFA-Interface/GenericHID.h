@@ -44,7 +44,7 @@
 		#include <string.h>
 
 		#include "Descriptors.h"
-		#include "AppConfig.h"
+		#include "Config/AppConfig.h"
 
 		#include <LUFA/Drivers/Board/LEDs.h>
 		#include <LUFA/Drivers/USB/USB.h>
@@ -64,7 +64,7 @@
 		#define LEDMASK_USB_ERROR        (LEDS_LED1 | LEDS_LED3)
 
 	/* Function Prototypes: */
-		void setupUSBHardware(void);
+		void SetupUSBHardware(void);
 
 		void EVENT_USB_Device_Connect(void);
 		void EVENT_USB_Device_Disconnect(void);
